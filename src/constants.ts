@@ -12,3 +12,12 @@ export enum Action {
   WorkDirName = 'actions_hugo',
   TempDirName = '_temp'
 }
+
+export enum Pandoc {
+  Name = 'pandoc',
+  Org = 'jgm',
+  Repo = 'pandoc',
+  CmdName = 'pandoc',
+  CmdOptVersion = '--version',
+  WorkDirName = 'pandoc_work_dir'
+}

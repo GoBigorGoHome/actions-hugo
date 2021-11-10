@@ -6,6 +6,11 @@ import getArch from './get-arch';
 import getURL from './get-url';
 import * as path from 'path';
 import {Tool, Action} from './constants';
+import { getPandocURL } from './get-url';
+import {Pandoc} from './constants';
+import * as exec from '@actions/exec';
+import { showVersion } from './main';
+import { writeFileSync } from 'fs';
 
 export function getHomeDir(): string {
   let homedir = '';
@@ -28,6 +33,13 @@ export async function createWorkDir(): Promise<string> {
   return workDir;
 }
 
+export async function createWorkDirForPandoc(): Promise<string> {
+  const workDir = path.join(getHomeDir(), Pandoc.WorkDirName);
+  await io.mkdirP(workDir);
+  core.debug(`workDir: ${workDir}`);
+  return workDir;
+}
+
 export async function createTempDir(workDir: string): Promise<string> {
   const tempDir = path.join(workDir, Action.TempDirName);
   await io.mkdirP(tempDir);
@@ -43,7 +55,7 @@ export async function createBinDir(workDir: string): Promise<string> {
   return binDir;
 }
 
-export async function installer(version: string): Promise<void> {
+export async function installHugo(version: string): Promise<void> {
   const extended: string = core.getInput('extended');
   core.debug(`Hugo extended: ${extended}`);
 
@@ -70,4 +82,28 @@ export async function installer(version: string): Promise<void> {
     toolBin = `${toolExtractedFolder}/${Tool.CmdName}`;
   }
   await io.mv(toolBin, binDir);
+}
+
+export async function installPandoc(pandocVersion: string): Promise<void> {
+  const toolURL: string = getPandocURL("linux", "amd64",  pandocVersion);
+  core.debug(`toolURL: ${toolURL}`);
+  const workDir = await createWorkDirForPandoc();
+  const binDir = await createBinDir(workDir);
+  const tempDir = await createTempDir(workDir);
+
+  const toolAssets: string = await tc.downloadTool(toolURL);
+  let toolBin = '';
+  if (process.platform === 'win32') {
+    const toolExtractedFolder: string = await tc.extractZip(toolAssets, tempDir);
+    toolBin = `${toolExtractedFolder}/pandoc-${pandocVersion}/bin/${Pandoc.CmdName}.exe`;
+  } else {
+    const toolExtractedFolder: string = await tc.extractTar(toolAssets, tempDir);
+    toolBin = `${toolExtractedFolder}/pandoc-${pandocVersion}/bin/${Pandoc.CmdName}`;
+  }
+  const result = await showVersion("pwd", []);
+  const working_dir = result.output.trimEnd();
+  const pandoc_path =  path.join(working_dir, 'pandoc');
+  writeFileSync(`${pandoc_path}`, `#!/bin/bash\nexec ${toolBin} --no-highlight "$@"\n`);
+  await exec.exec("chmod", ["+x", "pandoc"]);
+  await io.mv("pandoc", binDir);
 }

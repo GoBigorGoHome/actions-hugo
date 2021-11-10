@@ -28,3 +28,22 @@ export default function getURL(
 
   return url;
 }
+
+export function getPandocURL(
+  os: string,
+  arch: string,
+  version: string
+): string {
+  const ext = (os: string): string => {
+    if (os === 'Windows') {
+      return 'zip';
+    } else {
+      return 'tar.gz';
+    }
+  };
+
+  const pandocName = `pandoc-${version}-${os}-${arch}`;
+  const baseURL = 'https://github.com/jgm/pandoc/releases/download';
+  const url = `${baseURL}/${version}/${pandocName}.${ext(os)}`;
+  return url;
+}

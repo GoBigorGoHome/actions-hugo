@@ -1,8 +1,10 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import {getLatestVersion} from './get-latest-version';
-import {installer} from './installer';
+import {installHugo} from './installer';
 import {Tool} from './constants';
+import {Pandoc} from './constants';
+import {installPandoc} from './installer';
 
 export interface ActionResult {
   exitcode: number;
@@ -46,8 +48,12 @@ export async function run(): Promise<ActionResult> {
   }
 
   core.info(`${Tool.Name} version: ${installVersion}`);
-  await installer(installVersion);
+  await installHugo(installVersion);
   result = await showVersion(Tool.CmdName, [Tool.CmdOptVersion]);
 
+  const pandocVersion = await getLatestVersion(Pandoc.Org, Pandoc.Repo, 'github');
+  core.info(`${Pandoc.Name} version: ${pandocVersion}`);
+  await installPandoc(pandocVersion);
+  await showVersion(Pandoc.CmdName, [Pandoc.CmdOptVersion]);
   return result;
 }
