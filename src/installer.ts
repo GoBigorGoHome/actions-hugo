@@ -103,7 +103,7 @@ export async function installPandoc(pandocVersion: string): Promise<void> {
   const result = await showVersion("pwd", []);
   const working_dir = result.output.trimEnd();
   const pandoc_path =  path.join(working_dir, 'pandoc');
-  writeFileSync(`${pandoc_path}`, `#!/bin/bash\nexec ${toolBin} --no-highlight "$@"\n`);
+  writeFileSync(`${pandoc_path}`, `#!/bin/bash\nexec ${toolBin} --syntax-highlighting=none "$@"\n`);
   await exec.exec("chmod", ["+x", "pandoc"]);
   await io.mv("pandoc", binDir);
 }
